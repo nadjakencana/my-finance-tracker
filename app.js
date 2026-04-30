@@ -9,9 +9,21 @@ let transactions = [];
 let wallets = [];
 let categories = [];
 let chartInstance = null;
+let editingId = null; // Variabel baru untuk fitur Edit
 
 const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+};
+
+// Ubah format tanggal (Contoh: 30 Apr 2026)
+const formatDate = (dateString) => {
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
+};
+
+// Wrapper SweetAlert biar support Dark Mode otomatis
+const showAlert = (title, text, icon) => {
+    Swal.fire({ title, text, icon, confirmButtonColor: '#000', background: document.documentElement.classList.contains('dark') ? '#111' : '#fff', color: document.documentElement.classList.contains('dark') ? '#fff' : '#000' });
 };
 
 // 2. FUNGSI INISIALISASI
@@ -22,7 +34,7 @@ async function initApp() {
     await fetchTransactions();
 }
 
-// 3. READ: Mengambil Master Data (Dipakai di Form Utama & Modal)
+// 3. READ: Mengambil Master Data
 async function fetchWalletsAndCategories() {
     try {
         const [resWallets, resCategories] = await Promise.all([
@@ -36,7 +48,6 @@ async function fetchWalletsAndCategories() {
         wallets = resWallets.data || [];
         categories = resCategories.data || [];
 
-        // Update Dropdown Utama
         const walletSelect = document.getElementById('wallet');
         walletSelect.innerHTML = wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
         updateCategoryDropdown();
@@ -112,17 +123,18 @@ function renderApp() {
         
         item.innerHTML = `
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center ${isIncome ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center ${isIncome ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} shrink-0">
                     ${isIncome ? '↓' : '↑'}
                 </div>
                 <div>
                     <h4 class="font-semibold text-lg">${catName}</h4>
-                    <p class="text-sm text-gray-500">${t.date} • ${walletName} ${t.notes ? '• ' + t.notes : ''}</p>
+                    <p class="text-sm text-gray-500">${formatDate(t.date)} • ${walletName} ${t.notes ? '• ' + t.notes : ''}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <p class="font-bold ${amountColor}">${sign} ${formatRupiah(t.amount)}</p>
-                <button onclick="deleteTransaction('${t.id}')" class="text-red-400 hover:text-red-600 active-click font-bold text-xl ml-4">✕</button>
+            <div class="flex items-center gap-2">
+                <p class="font-bold ${amountColor} mr-2 hidden sm:block">${sign} ${formatRupiah(t.amount)}</p>
+                <button onclick="editTransaction('${t.id}')" class="text-blue-400 hover:text-blue-600 active-click text-xl px-2 transition-colors">✎</button>
+                <button onclick="deleteTransaction('${t.id}')" class="text-red-400 hover:text-red-600 active-click font-bold text-xl px-2 transition-colors">✕</button>
             </div>
         `;
         listContainer.appendChild(item);
@@ -131,22 +143,22 @@ function renderApp() {
     updateChart(totalIncome, totalExpense);
 }
 
-// 6. TRANSAKSI CRUD
+// 6. CREATE & UPDATE TRANSAKSI
 async function addTransaction(e) {
     e.preventDefault(); 
     const categoryId = document.getElementById('category').value;
     const walletId = document.getElementById('wallet').value;
     
     if(!categoryId || !walletId) {
-        alert("Pilih Kategori dan Dompet terlebih dahulu!");
+        showAlert("Oops!", "Pilih Kategori dan Dompet terlebih dahulu!", "warning");
         return;
     }
 
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const submitBtn = document.getElementById('submitBtn');
     submitBtn.innerText = "Menyimpan...";
     submitBtn.disabled = true;
 
-    const newTx = {
+    const txData = {
         type: document.getElementById('type').value,
         amount: document.getElementById('amount').value,
         category_id: categoryId,
@@ -155,38 +167,98 @@ async function addTransaction(e) {
         notes: document.getElementById('notes').value
     };
 
-    const { error } = await db.from('transactions').insert([newTx]);
-    if (error) { alert("Gagal menyimpan!"); console.error(error); } 
-    else {
-        document.getElementById('amount').value = '';
-        document.getElementById('notes').value = '';
-        await fetchTransactions(); 
+    let error;
+    if (editingId) {
+        // Logika UPDATE
+        const res = await db.from('transactions').update(txData).eq('id', editingId);
+        error = res.error;
+    } else {
+        // Logika INSERT
+        const res = await db.from('transactions').insert([txData]);
+        error = res.error;
     }
-    submitBtn.innerText = "Simpan Transaksi";
+
+    if (error) { 
+        showAlert("Gagal!", "Gagal menyimpan transaksi.", "error");
+        console.error(error); 
+    } else {
+        cancelEdit(); // Reset form & status edit
+        await fetchTransactions(); 
+        showAlert("Berhasil!", "Transaksi tersimpan.", "success");
+    }
+    
     submitBtn.disabled = false;
 }
 
+// 7. EDIT TRANSAKSI (POPULATE FORM)
+window.editTransaction = (id) => {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    editingId = id;
+    document.getElementById('formTitle').innerText = "Edit Transaksi";
+    document.getElementById('type').value = tx.type;
+    updateCategoryDropdown(); // Update opsi kategori berdasarkan tipe
+    
+    document.getElementById('amount').value = tx.amount;
+    document.getElementById('category').value = tx.category_id;
+    document.getElementById('wallet').value = tx.wallet_id;
+    document.getElementById('date').value = tx.date;
+    document.getElementById('notes').value = tx.notes || '';
+
+    document.getElementById('submitBtn').innerText = "Update Transaksi";
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+    // Scroll mulus ke form
+    document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
+};
+
+// BATAL EDIT
+window.cancelEdit = () => {
+    editingId = null;
+    document.getElementById('formTitle').innerText = "Transaksi Baru";
+    document.getElementById('transactionForm').reset();
+    document.getElementById('date').valueAsDate = new Date();
+    updateCategoryDropdown();
+    
+    document.getElementById('submitBtn').innerText = "Simpan Transaksi";
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+};
+
+// DELETE TRANSAKSI
 window.deleteTransaction = async (id) => {
-    if(!confirm("Yakin ingin menghapus transaksi ini?")) return;
-    const { error } = await db.from('transactions').delete().eq('id', id);
-    if (!error) await fetchTransactions();
+    const isDark = document.documentElement.classList.contains('dark');
+    const result = await Swal.fire({
+        title: 'Hapus Transaksi?',
+        text: "Data tidak bisa dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: isDark ? '#444' : '#999',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal',
+        background: isDark ? '#111' : '#fff',
+        color: isDark ? '#fff' : '#000'
+    });
+
+    if (result.isConfirmed) {
+        const { error } = await db.from('transactions').delete().eq('id', id);
+        if (error) showAlert("Error!", "Gagal menghapus.", "error");
+        else {
+            await fetchTransactions();
+            Swal.fire({title: 'Terhapus!', icon: 'success', timer: 1500, showConfirmButton: false, background: isDark ? '#111' : '#fff', color: isDark ? '#fff' : '#000'});
+        }
+    }
 }
 
 // ==========================================
-// 7. FITUR KELOLA MODAL (WALLET & CATEGORY)
+// 8. FITUR KELOLA MODAL (WALLET & CATEGORY)
 // ==========================================
-
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     const modalContent = modal.querySelector('div');
-    
     modal.classList.remove('hidden');
-    // Beri jeda sangat kecil agar transisi CSS berjalan
-    setTimeout(() => {
-        modal.classList.add('modal-active');
-        modalContent.classList.add('modal-scale-up');
-    }, 10);
-
+    setTimeout(() => { modal.classList.add('modal-active'); modalContent.classList.add('modal-scale-up'); }, 10);
     if (id === 'walletModal') renderWalletList();
     if (id === 'categoryModal') renderCategoryList();
 };
@@ -194,17 +266,12 @@ window.openModal = (id) => {
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
     const modalContent = modal.querySelector('div');
-    
     modal.classList.remove('modal-active');
     modalContent.classList.remove('modal-scale-up');
-    
-    // Tunggu animasi selesai baru di-hide
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300);
+    setTimeout(() => { modal.classList.add('hidden'); }, 300);
 };
 
-// --- LOGIKA DOMPET (WALLET) ---
+// --- LOGIKA DOMPET ---
 function renderWalletList() {
     const list = document.getElementById('modalWalletList');
     list.innerHTML = wallets.map(w => `
@@ -219,28 +286,20 @@ window.addWallet = async () => {
     const input = document.getElementById('newWalletName');
     const name = input.value.trim();
     if (!name) return;
-
     const { error } = await db.from('wallets').insert([{ name }]);
-    if (!error) {
-        input.value = '';
-        await fetchWalletsAndCategories(); // Ambil ulang data dari Supabase
-        renderWalletList(); // Update UI Modal
-    } else {
-        alert("Gagal menambahkan dompet.");
-    }
+    if (!error) { input.value = ''; await fetchWalletsAndCategories(); renderWalletList(); } 
+    else showAlert("Error!", "Gagal tambah dompet.", "error");
 };
 
 window.deleteWallet = async (id) => {
-    if(!confirm("Hapus dompet ini? Peringatan: Semua transaksi yang menggunakan dompet ini juga akan terhapus!")) return;
-    const { error } = await db.from('wallets').delete().eq('id', id);
-    if (!error) {
-        await fetchWalletsAndCategories();
-        await fetchTransactions(); // Refresh transaksi karena data terkait ikut terhapus (Cascade)
-        renderWalletList();
+    const result = await Swal.fire({ title: 'Hapus dompet?', text: 'Transaksi terkait juga ikut terhapus!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    if(result.isConfirmed){
+        const { error } = await db.from('wallets').delete().eq('id', id);
+        if (!error) { await fetchWalletsAndCategories(); await fetchTransactions(); renderWalletList(); }
     }
 };
 
-// --- LOGIKA KATEGORI (CATEGORY) ---
+// --- LOGIKA KATEGORI ---
 function renderCategoryList() {
     const list = document.getElementById('modalCategoryList');
     list.innerHTML = categories.map(c => {
@@ -259,65 +318,36 @@ function renderCategoryList() {
 }
 
 window.addCategory = async () => {
-    const inputName = document.getElementById('newCategoryName');
-    const inputType = document.getElementById('newCategoryType');
-    
-    const name = inputName.value.trim();
-    const type = inputType.value;
+    const name = document.getElementById('newCategoryName').value.trim();
+    const type = document.getElementById('newCategoryType').value;
     if (!name) return;
-
     const { error } = await db.from('categories').insert([{ name, type }]);
-    if (!error) {
-        inputName.value = '';
-        await fetchWalletsAndCategories(); 
-        renderCategoryList();
-    } else {
-        alert("Gagal menambahkan kategori.");
-    }
+    if (!error) { document.getElementById('newCategoryName').value = ''; await fetchWalletsAndCategories(); renderCategoryList(); } 
+    else showAlert("Error!", "Gagal tambah kategori.", "error");
 };
 
 window.deleteCategory = async (id) => {
-    if(!confirm("Hapus kategori ini? Peringatan: Semua transaksi dengan kategori ini juga akan terhapus!")) return;
-    const { error } = await db.from('categories').delete().eq('id', id);
-    if (!error) {
-        await fetchWalletsAndCategories();
-        await fetchTransactions(); 
-        renderCategoryList();
+    const result = await Swal.fire({ title: 'Hapus kategori?', text: 'Transaksi terkait juga ikut terhapus!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    if(result.isConfirmed){
+        const { error } = await db.from('categories').delete().eq('id', id);
+        if (!error) { await fetchWalletsAndCategories(); await fetchTransactions(); renderCategoryList(); }
     }
 };
 
-// ==========================================
-
-// 8. GRAFIK
+// 9. GRAFIK
 function updateChart(income, expense) {
     const ctx = document.getElementById('financeChart').getContext('2d');
     if (chartInstance) chartInstance.destroy();
-
     const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#ffffff' : '#000000';
-
+    
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: {
-            labels: ['Pemasukan', 'Pengeluaran'],
-            datasets: [{
-                data: [income, expense],
-                backgroundColor: ['#22c55e', '#ef4444'], 
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '75%', 
-            plugins: {
-                legend: { position: 'bottom', labels: { color: textColor } }
-            }
-        }
+        data: { labels: ['Pemasukan', 'Pengeluaran'], datasets: [{ data: [income, expense], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0, hoverOffset: 4 }] },
+        options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#ffffff' : '#000000' } } } }
     });
 }
 
-// 9. EVENT LISTENERS
+// 10. EVENT LISTENERS
 function setupEventListeners() {
     document.getElementById('transactionForm').addEventListener('submit', addTransaction);
     document.getElementById('type').addEventListener('change', updateCategoryDropdown);
@@ -325,18 +355,12 @@ function setupEventListeners() {
 
     const darkModeBtn = document.getElementById('darkModeToggle');
     const htmlTag = document.documentElement;
-    
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        htmlTag.classList.add('dark');
-    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) htmlTag.classList.add('dark');
 
     darkModeBtn.addEventListener('click', () => {
         htmlTag.classList.toggle('dark');
-        if (transactions.length > 0 || (transactions.length === 0 && chartInstance)) {
-            renderApp();
-        }
+        if (transactions.length > 0 || (transactions.length === 0 && chartInstance)) renderApp();
     });
 }
 
-// EKSEKUSI
 initApp();
