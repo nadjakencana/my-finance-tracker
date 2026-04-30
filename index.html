@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Tracker | Minimalist</title>
     
-    <!-- Supabase, Chart.js, Tailwind CDN -->
+    <!-- Supabase, Chart.js, Tailwind, & SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <!-- Custom Font (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -29,7 +30,8 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="style.css">
+    <!-- CACHE BUSTER: Paksa browser load CSS terbaru -->
+    <link rel="stylesheet" href="style.css?v=999">
 </head>
 <body class="bg-apple-bg text-apple-text dark:bg-nothing-bg dark:text-nothing-text transition-colors duration-500 min-h-screen relative">
 
@@ -67,8 +69,8 @@
             <div class="lg:col-span-1 space-y-10">
                 
                 <!-- Form Tambah Transaksi -->
-                <div class="p-8 rounded-[2rem] bg-white dark:bg-nothing-card shadow-apple border border-transparent dark:border-nothing-border">
-                    <h3 class="text-xl font-semibold mb-6">Transaksi Baru</h3>
+                <div id="formSection" class="p-8 rounded-[2rem] bg-white dark:bg-nothing-card shadow-apple border border-transparent dark:border-nothing-border scroll-mt-10 transition-all duration-300">
+                    <h3 id="formTitle" class="text-xl font-semibold mb-6">Transaksi Baru</h3>
                     <form id="transactionForm" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">Tipe</label>
@@ -83,7 +85,6 @@
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Input Kategori dengan tombol Kelola -->
                             <div>
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="block text-sm font-medium">Kategori</label>
@@ -91,7 +92,6 @@
                                 </div>
                                 <select id="category" required class="w-full p-3 rounded-xl bg-gray-50 dark:bg-black border border-gray-200 dark:border-nothing-border outline-none"></select>
                             </div>
-                            <!-- Input Dompet dengan tombol Kelola -->
                             <div>
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="block text-sm font-medium">Dompet</label>
@@ -109,9 +109,15 @@
                             <label class="block text-sm font-medium mb-1">Catatan</label>
                             <input type="text" id="notes" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-black border border-gray-200 dark:border-nothing-border outline-none">
                         </div>
-                        <button type="submit" class="w-full py-4 mt-4 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold hover:opacity-80 active-click transition-all">
-                            Simpan Transaksi
-                        </button>
+                        
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden w-1/3 py-4 rounded-xl bg-gray-200 dark:bg-gray-800 text-black dark:text-white font-semibold hover:opacity-80 active-click transition-all">
+                                Batal
+                            </button>
+                            <button type="submit" id="submitBtn" class="w-full py-4 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold hover:opacity-80 active-click transition-all">
+                                Simpan Transaksi
+                            </button>
+                        </div>
                     </form>
                 </div>
 
@@ -141,8 +147,6 @@
         </div>
     </div>
 
-    <!-- ================= MODALS SECTION ================= -->
-    
     <!-- Modal Kelola Dompet -->
     <div id="walletModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white dark:bg-nothing-card p-8 rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 mx-4 border border-transparent dark:border-nothing-border">
@@ -154,9 +158,7 @@
                 <input type="text" id="newWalletName" placeholder="Nama dompet baru..." class="flex-1 p-3 rounded-xl bg-gray-50 dark:bg-black border border-gray-200 dark:border-nothing-border outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
                 <button onclick="addWallet()" class="px-5 py-3 bg-black dark:bg-white text-white dark:text-black font-semibold rounded-xl hover:opacity-80 transition-all">+</button>
             </div>
-            <div id="modalWalletList" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                <!-- Data List Dompet -->
-            </div>
+            <div id="modalWalletList" class="space-y-3 max-h-60 overflow-y-auto pr-2"></div>
         </div>
     </div>
 
@@ -177,12 +179,11 @@
                     <button onclick="addCategory()" class="px-5 py-3 bg-black dark:bg-white text-white dark:text-black font-semibold rounded-xl hover:opacity-80 transition-all">+</button>
                 </div>
             </div>
-            <div id="modalCategoryList" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                <!-- Data List Kategori -->
-            </div>
+            <div id="modalCategoryList" class="space-y-3 max-h-60 overflow-y-auto pr-2"></div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- CACHE BUSTER: Paksa browser load JS terbaru -->
+    <script src="app.js?v=999"></script>
 </body>
 </html>
