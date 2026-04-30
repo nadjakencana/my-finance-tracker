@@ -1,0 +1,65 @@
+/* Menghilangkan panah pada input number */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+/* Scrollbar Custom Minimalis */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #444;
+}
+
+/* Animasi Micro-interactions */
+.hover-scale {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-scale:hover {
+    transform: translateY(-4px) scale(1.01);
+}
+
+.active-click {
+    transition: transform 0.1s;
+}
+.active-click:active {
+    transform: scale(0.96);
+}
+
+/* Animasi Masuk Transaksi */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hover Efek List Transaksi & Modal Item */
+.transaction-item, .modal-item {
+    transition: all 0.3s ease;
+}
+.transaction-item:hover, .modal-item:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+.dark .transaction-item:hover, .dark .modal-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Modal Animation Helper Classes */
+.modal-active {
+    display: flex !important;
+    opacity: 1 !important;
+}
+.modal-scale-up {
+    transform: scale(1) !important;
+}
