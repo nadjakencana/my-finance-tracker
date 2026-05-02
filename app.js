@@ -9,8 +9,15 @@ let categories = [];
 let chartInstance = null;
 let editingId = null; 
 
+// Fungsi Vibrate (Haptic Feedback) untuk HP
+const triggerHaptic = () => {
+    if (navigator.vibrate) {
+        navigator.vibrate(50); // Getar halus 50ms
+    }
+};
+
 const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
 const showAlert = (title, text, icon) => {
     if (typeof Swal !== 'undefined') {
@@ -26,7 +33,20 @@ const showAlert = (title, text, icon) => {
     }
 };
 
+// DYNAMIC GREETING HANDWRITING
+const setGreeting = () => {
+    const hour = new Date().getHours();
+    let greet = 'Halo,';
+    if (hour >= 5 && hour < 11) greet = 'Selamat Pagi,';
+    else if (hour >= 11 && hour < 15) greet = 'Selamat Siang,';
+    else if (hour >= 15 && hour < 18) greet = 'Selamat Sore,';
+    else greet = 'Selamat Malam,';
+    // Hanya mengubah teks Selamat Malam-nya saja
+    document.getElementById('greetingText').innerText = greet;
+};
+
 async function initApp() {
+    setGreeting();
     document.getElementById('date').valueAsDate = new Date();
     setupEventListeners(); 
     await fetchWalletsAndCategories();
@@ -67,21 +87,55 @@ async function fetchTransactions() {
 
 function renderApp() {
     const filterType = document.getElementById('filterType').value;
+    const filterTime = document.getElementById('filterTime').value;
+    
     let filteredTransactions = transactions;
-    if (filterType !== 'all') filteredTransactions = transactions.filter(t => t.type === filterType);
+
+    if (filterType !== 'all') {
+        filteredTransactions = filteredTransactions.filter(t => t.type === filterType);
+    }
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    if (filterTime === 'today') {
+        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= today);
+    } else if (filterTime === 'week') {
+        const last7Days = new Date(today);
+        last7Days.setDate(last7Days.getDate() - 7);
+        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= last7Days);
+    } else if (filterTime === 'month') {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= startOfMonth);
+    }
 
     let totalIncome = 0; let totalExpense = 0;
-    transactions.forEach(t => { if (t.type === 'income') totalIncome += Number(t.amount); if (t.type === 'expense') totalExpense += Number(t.amount); });
+    const categoryTotals = {}; 
+
+    filteredTransactions.forEach(t => { 
+        const amount = Number(t.amount);
+        const catName = t.categories ? t.categories.name : 'Unknown';
+        if (t.type === 'income') totalIncome += amount;
+        else if (t.type === 'expense') totalExpense += amount;
+
+        if (!categoryTotals[catName]) categoryTotals[catName] = { amount: 0, type: t.type };
+        categoryTotals[catName].amount += amount;
+    });
 
     document.getElementById('totalIncome').innerText = formatRupiah(totalIncome);
     document.getElementById('totalExpense').innerText = formatRupiah(totalExpense);
-    document.getElementById('totalBalance').innerText = formatRupiah(totalIncome - totalExpense);
 
     const listContainer = document.getElementById('transactionList');
     listContainer.innerHTML = '';
 
     if (filteredTransactions.length === 0) {
-        listContainer.innerHTML = `<p class="text-center text-gray-500 py-10 font-medium">No records found.</p>`;
+        listContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 opacity-50">
+                <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <p class="text-center font-bold text-lg">Belum Ada Catatan</p>
+                <p class="text-center text-sm font-medium">Keuanganmu belum tercatat di periode ini.</p>
+            </div>
+        `;
     }
 
     filteredTransactions.forEach((t, index) => {
@@ -93,7 +147,7 @@ function renderApp() {
         const iconSrc = isIncome ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>` : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
         
         const item = document.createElement('div');
-        item.className = `transaction-item p-4 rounded-3xl bg-white/60 dark:bg-[#111] border border-gray-100 dark:border-[#222] flex justify-between items-center animate-fade-in shadow-sm`;
+        item.className = `transaction-item p-4 rounded-[1.5rem] bg-white/60 dark:bg-[#111]/80 backdrop-blur-md border border-gray-100 dark:border-[#222] flex justify-between items-center animate-fade-in shadow-sm`;
         item.style.animationDelay = `${index * 0.04}s`; 
         
         item.innerHTML = `
@@ -102,8 +156,9 @@ function renderApp() {
                     ${iconSrc}
                 </div>
                 <div>
-                    <h4 class="font-bold text-lg tracking-tight">${catName}</h4>
-                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">${formatDate(t.date)} • ${walletName} ${t.notes ? `<span class="normal-case tracking-normal text-gray-400">• ${t.notes}</span>` : ''}</p>
+                    <h4 class="font-bold text-lg tracking-tight leading-tight">${catName}</h4>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-0.5">${formatDate(t.date)} • ${walletName}</p>
+                    ${t.notes ? `<p class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-1 line-clamp-1">${t.notes}</p>` : ''}
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -120,17 +175,54 @@ function renderApp() {
     });
 
     updateChart(totalIncome, totalExpense);
+    renderCategoryLevels(categoryTotals, totalIncome, totalExpense);
+}
+
+function renderCategoryLevels(categoryTotals, totalIncome, totalExpense) {
+    const container = document.getElementById('categoryStats');
+    const categoriesArr = Object.keys(categoryTotals).map(name => ({
+        name,
+        amount: categoryTotals[name].amount,
+        type: categoryTotals[name].type
+    })).sort((a, b) => b.amount - a.amount);
+
+    if (categoriesArr.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 font-medium">Belum ada data level.</p>';
+        return;
+    }
+
+    container.innerHTML = categoriesArr.map((cat, index) => {
+        const maxAmount = cat.type === 'income' ? totalIncome : totalExpense;
+        const percentage = maxAmount === 0 ? 0 : Math.round((cat.amount / maxAmount) * 100);
+        const bgGradient = cat.type === 'income' ? 'bg-gradient-to-r from-[#32ADE6] to-[#007AFF]' : 'bg-gradient-to-r from-[#FF453A] to-[#FF3B30]';
+
+        return `
+            <div class="mb-4 animate-fade-in" style="animation-delay: ${index * 0.1}s">
+                <div class="flex justify-between text-xs font-bold mb-1.5 uppercase tracking-wider">
+                    <span class="text-gray-600 dark:text-gray-300">${cat.name}</span>
+                    <span class="${cat.type === 'income' ? 'text-[#007AFF]' : 'text-[#FF3B30]'}">${percentage}%</span>
+                </div>
+                <div class="w-full bg-black/5 dark:bg-white/10 rounded-full h-3 overflow-hidden backdrop-blur-sm">
+                    <div class="${bgGradient} h-3 rounded-full animate-fill-bar shadow-sm" style="width: ${percentage}%"></div>
+                </div>
+                <p class="text-[10px] font-bold text-gray-400 mt-1 text-right">${formatRupiah(cat.amount)}</p>
+            </div>
+        `;
+    }).join('');
 }
 
 async function addTransaction(e) {
     e.preventDefault(); 
+    triggerHaptic(); // Haptic feedback getar HP saat klik simpan
+    
     const categoryId = document.getElementById('category').value;
     const walletId = document.getElementById('wallet').value;
     
-    if(!categoryId || !walletId) { showAlert("Oops!", "Please select Category and Wallet!", "warning"); return; }
+    if(!categoryId || !walletId) { showAlert("Oops!", "Pilih Kategori dan Dompet dulu!", "warning"); return; }
 
     const submitBtn = document.getElementById('submitBtn');
-    submitBtn.innerText = "Saving..."; submitBtn.disabled = true;
+    submitBtn.innerHTML = "Menyimpan... <span class='animate-pulse'>⏳</span>"; 
+    submitBtn.disabled = true;
 
     const txData = {
         type: document.querySelector('input[name="type"]:checked').value,
@@ -143,14 +235,16 @@ async function addTransaction(e) {
     if (editingId) { const res = await db.from('transactions').update(txData).eq('id', editingId); error = res.error; } 
     else { const res = await db.from('transactions').insert([txData]); error = res.error; }
 
-    if (error) { showAlert("Error!", "Failed to save record.", "error"); } 
-    else { cancelEdit(); await fetchTransactions(); showAlert("Success!", "Record saved.", "success"); }
+    if (error) { showAlert("Error!", "Gagal menyimpan.", "error"); } 
+    else { cancelEdit(); await fetchTransactions(); showAlert("Sukses!", "Data tersimpan mulus.", "success"); }
     
+    submitBtn.innerHTML = "Simpan <svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
     submitBtn.disabled = false;
 }
 
 window.editTransaction = (id) => {
     try {
+        triggerHaptic();
         const tx = transactions.find(t => t.id === id);
         if (!tx) return;
         editingId = id;
@@ -161,8 +255,13 @@ window.editTransaction = (id) => {
         document.getElementById('category').value = tx.category_id;
         document.getElementById('wallet').value = tx.wallet_id;
         document.getElementById('date').value = tx.date;
-        document.getElementById('notes').value = tx.notes || '';
-        document.getElementById('submitBtn').innerText = "Update Record";
+        
+        const notesEl = document.getElementById('notes');
+        notesEl.value = tx.notes || '';
+        notesEl.style.height = 'auto'; 
+        notesEl.style.height = notesEl.scrollHeight + 'px';
+
+        document.getElementById('submitBtn').innerHTML = "Update <svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'></path></svg>";
         document.getElementById('cancelEditBtn').classList.remove('hidden');
 
         const formSec = document.getElementById('formSection');
@@ -174,31 +273,34 @@ window.editTransaction = (id) => {
 
 window.cancelEdit = () => {
     editingId = null;
-    document.getElementById('formTitle').innerText = "New Record";
+    document.getElementById('formTitle').innerText = "Record Baru";
     document.getElementById('transactionForm').reset();
     document.getElementById('date').valueAsDate = new Date();
+    document.getElementById('notes').style.height = 'auto';
     updateCategoryDropdown();
-    document.getElementById('submitBtn').innerText = "Save";
+    document.getElementById('submitBtn').innerHTML = "Simpan <svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>";
     document.getElementById('cancelEditBtn').classList.add('hidden');
 };
 
 window.deleteTransaction = async (id) => {
     try {
+        triggerHaptic();
         const isDark = document.documentElement.classList.contains('dark');
         const result = await Swal.fire({
-            title: 'Delete this record?', text: "You won't be able to revert this!", icon: 'warning', showCancelButton: true,
-            confirmButtonColor: '#FF3B30', cancelButtonColor: isDark ? '#333' : '#E5E5EA', confirmButtonText: 'Yes, delete it!', cancelButtonText: 'Cancel',
+            title: 'Hapus data ini?', text: "Data bakal hilang permanen lho!", icon: 'warning', showCancelButton: true,
+            confirmButtonColor: '#FF3B30', cancelButtonColor: isDark ? '#333' : '#E5E5EA', confirmButtonText: 'Ya, Hapus!', cancelButtonText: 'Batal',
             background: isDark ? '#1a1a1a' : '#fff', color: isDark ? '#fff' : '#000'
         });
         if (result.isConfirmed) {
             const { error } = await db.from('transactions').delete().eq('id', id);
-            if (error) showAlert("Error!", "Failed to delete.", "error");
-            else { await fetchTransactions(); Swal.fire({title: 'Deleted!', icon: 'success', timer: 1500, showConfirmButton: false, background: isDark ? '#1a1a1a' : '#fff', color: isDark ? '#fff' : '#000'}); }
+            if (error) showAlert("Error!", "Gagal menghapus.", "error");
+            else { await fetchTransactions(); Swal.fire({title: 'Terhapus!', icon: 'success', timer: 1500, showConfirmButton: false, background: isDark ? '#1a1a1a' : '#fff', color: isDark ? '#fff' : '#000'}); }
         }
     } catch(err) { console.error(err); }
 }
 
 window.openModal = (id) => {
+    triggerHaptic();
     const modal = document.getElementById(id); const modalContent = modal.querySelector('div');
     modal.classList.remove('hidden');
     setTimeout(() => { modal.classList.add('modal-active'); modalContent.classList.add('modal-scale-up'); }, 10);
@@ -228,7 +330,7 @@ window.addWallet = async () => {
 }
 
 window.deleteWallet = async (id) => {
-    const result = await Swal.fire({ title: 'Delete wallet?', text: 'Related transactions will also be deleted!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#FF3B30' });
+    const result = await Swal.fire({ title: 'Hapus dompet?', text: 'Transaksi terkait juga ikut terhapus!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#FF3B30' });
     if(result.isConfirmed){ const { error } = await db.from('wallets').delete().eq('id', id); if (!error) { await fetchWalletsAndCategories(); await fetchTransactions(); renderWalletList(); } }
 };
 
@@ -255,7 +357,7 @@ window.addCategory = async () => {
 };
 
 window.deleteCategory = async (id) => {
-    const result = await Swal.fire({ title: 'Delete category?', text: 'Related transactions will also be deleted!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#FF3B30' });
+    const result = await Swal.fire({ title: 'Hapus kategori?', text: 'Transaksi terkait juga ikut terhapus!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#FF3B30' });
     if(result.isConfirmed){ const { error } = await db.from('categories').delete().eq('id', id); if (!error) { await fetchWalletsAndCategories(); await fetchTransactions(); renderCategoryList(); } }
 };
 
@@ -264,13 +366,12 @@ function updateChart(income, expense) {
     if (chartInstance) chartInstance.destroy();
     const isDark = document.documentElement.classList.contains('dark');
     
-    // Gradient for Chart (Apple Blue & Apple Red)
     const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400); gradientBlue.addColorStop(0, '#32ADE6'); gradientBlue.addColorStop(1, '#007AFF');
     const gradientRed = ctx.createLinearGradient(0, 0, 0, 400); gradientRed.addColorStop(0, '#FF453A'); gradientRed.addColorStop(1, '#FF3B30');
 
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: ['Income', 'Expense'], datasets: [{ data: [income, expense], backgroundColor: [gradientBlue, gradientRed], borderWidth: isDark ? 2 : 4, borderColor: isDark ? '#000' : '#fff', hoverOffset: 8, borderRadius: 10 }] },
+        data: { labels: ['Pemasukan', 'Pengeluaran'], datasets: [{ data: [income, expense], backgroundColor: [gradientBlue, gradientRed], borderWidth: isDark ? 2 : 4, borderColor: isDark ? '#000' : '#fff', hoverOffset: 8, borderRadius: 10 }] },
         options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#fff' : '#000', padding: 20, font: { family: 'Inter', weight: 'bold' } } } } }
     });
 }
@@ -278,9 +379,15 @@ function updateChart(income, expense) {
 function setupEventListeners() {
     document.getElementById('transactionForm').addEventListener('submit', addTransaction);
     document.getElementById('filterType').addEventListener('change', renderApp);
+    document.getElementById('filterTime').addEventListener('change', renderApp);
+    
     const darkModeBtn = document.getElementById('darkModeToggle'); const htmlTag = document.documentElement;
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) htmlTag.classList.add('dark');
-    darkModeBtn.addEventListener('click', () => { htmlTag.classList.toggle('dark'); if (transactions.length > 0 || (transactions.length === 0 && chartInstance)) renderApp(); });
+    darkModeBtn.addEventListener('click', () => { 
+        triggerHaptic();
+        htmlTag.classList.toggle('dark'); 
+        if (transactions.length > 0 || (transactions.length === 0 && chartInstance)) renderApp(); 
+    });
 }
 
 initApp();
