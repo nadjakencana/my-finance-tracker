@@ -5,28 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nadja Kencana | Finance Tracker</title>
     
-    <!-- Favicon JPG buatan Bos Nadja -->
     <link rel="icon" type="image/jpeg" href="preview.jpg">
-    
-    <!-- Supabase, Chart.js, Tailwind, & SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- Custom Fonts: Inter (Tech/Clean) & Caveat (Handwriting ala iPad air) -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { 
-                        sans: ['Inter', 'sans-serif'],
-                        handwriting: ['Caveat', 'cursive']
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], handwriting: ['Caveat', 'cursive'] },
                     colors: {
                         apple: { bg: '#eef2f6', card: 'rgba(255, 255, 255, 0.75)', text: '#1d1d1f', border: 'rgba(255,255,255,0.5)' },
                         nothing: { bg: '#000000', card: 'rgba(15, 15, 15, 0.8)', text: '#ffffff', border: '#222222' }
@@ -36,11 +27,11 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="style.css?v=3000">
+    <link rel="stylesheet" href="style.css?v=4000">
 </head>
 <body class="bg-[#f5f7fa] dark:bg-[#050505] text-apple-text dark:text-nothing-text transition-colors duration-500 min-h-screen relative overflow-x-hidden">
 
-    <!-- Ambient Glowing Blobs (Makin Nendang & Lebih Lebar) -->
+    <!-- Ambient Glowing Blobs -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] bg-[#007AFF]/40 dark:bg-[#007AFF]/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob"></div>
         <div class="absolute top-[-10%] right-[-15%] w-[600px] h-[600px] bg-[#5856D6]/40 dark:bg-[#5856D6]/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
@@ -48,28 +39,56 @@
         <div class="hidden dark:block absolute inset-0 nothing-grid opacity-30"></div>
     </div>
 
-    <div class="max-w-6xl mx-auto p-6 md:p-10 relative z-10">
+    <!-- ================= LOGIN SCREEN ================= -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-6 transition-opacity duration-500">
+        <div class="bg-apple-card dark:bg-nothing-card backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-2xl border border-white dark:border-[#333] max-w-sm w-full animate-slide-down">
+            <div class="text-center mb-8">
+                <img src="preview.jpg" alt="Logo" class="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-lg object-cover">
+                <h2 class="text-3xl font-extrabold tracking-tight">Login.</h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm font-medium">Akses eksklusif Nadja Kencana</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <input type="email" id="loginEmail" required placeholder="Email Pribadi" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-all font-medium backdrop-blur-sm">
+                </div>
+                <div>
+                    <input type="password" id="loginPassword" required placeholder="Password" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-all font-medium backdrop-blur-sm">
+                </div>
+                <button type="submit" id="loginBtn" class="w-full py-4 mt-2 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white font-bold text-lg hover:shadow-lg hover:shadow-blue-500/30 active-click transition-all flex justify-center items-center gap-2">
+                    Masuk <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- ================================================= -->
+
+    <!-- MAIN APP CONTAINER (Awalnya disembunyikan pakai class 'hidden') -->
+    <div id="appContainer" class="max-w-6xl mx-auto p-6 md:p-10 relative z-10 hidden opacity-0 transition-opacity duration-700">
         
         <!-- Header Typography Baru -->
-        <header class="flex justify-between items-start mb-16 animate-slide-down">
+        <header class="flex justify-between items-start mb-16">
             <div class="relative">
-                <!-- Handwriting Greeting -->
                 <p id="greetingText" class="font-handwriting text-5xl md:text-6xl text-[#007AFF] dark:text-[#32ADE6] transform -rotate-3 origin-left -mb-3 md:-mb-5 inline-block z-20 relative">
                     Selamat Malam,
                 </p>
-                <!-- Bold Name -->
                 <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400 pb-2 relative z-10">
                     Nadja Kencana<span class="text-[#007AFF] animate-pulse">.</span>
                 </h1>
             </div>
             
-            <button id="darkModeToggle" class="mt-4 p-4 rounded-full bg-white/60 backdrop-blur-xl dark:bg-[#111]/80 shadow-apple border border-white dark:border-nothing-border hover-scale active-click transition-all flex items-center justify-center group shrink-0">
-                <span class="group-hover:rotate-12 transition-transform duration-300">🌓</span>
-            </button>
+            <div class="flex gap-2 mt-4 shrink-0">
+                <button id="darkModeToggle" class="p-4 rounded-full bg-white/60 backdrop-blur-xl dark:bg-[#111]/80 shadow-apple border border-white dark:border-nothing-border hover-scale active-click transition-all flex items-center justify-center group">
+                    <span class="group-hover:rotate-12 transition-transform duration-300">🌓</span>
+                </button>
+                <button onclick="handleLogout()" class="p-4 rounded-full bg-white/60 backdrop-blur-xl dark:bg-[#111]/80 shadow-apple border border-white dark:border-nothing-border hover-scale active-click transition-all flex items-center justify-center group text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Keluar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
         </header>
 
-        <!-- Dashboard Cards (Hanya Income & Expense) -->
-        <div class="grid grid-cols-2 gap-6 mb-12 animate-fade-in">
+        <!-- Dashboard Cards -->
+        <div class="grid grid-cols-2 gap-6 mb-12">
             <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border hover-scale transition-all group overflow-hidden relative">
                 <div class="absolute inset-0 bg-gradient-to-br from-green-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2">Total Pemasukan</p>
@@ -84,7 +103,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <!-- Kiri: Form, Grafik, & Level -->
-            <div class="lg:col-span-1 space-y-8 animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="lg:col-span-1 space-y-8">
                 
                 <!-- Form Tambah Transaksi -->
                 <div id="formSection" class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border scroll-mt-10 transition-all duration-300">
@@ -130,7 +149,7 @@
                         <!-- TEXTAREA EXPANDING -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Catatan</label>
-                            <textarea id="notes" placeholder="Tulis catatan (otomatis membesar)..." rows="1" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-shadow text-base font-medium resize-none overflow-hidden backdrop-blur-sm" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                            <textarea id="notes" placeholder="Tulis catatan" rows="1" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-shadow text-base font-medium resize-none overflow-hidden backdrop-blur-sm" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
                         </div>
                         
                         <div class="flex gap-3 pt-2">
@@ -148,7 +167,6 @@
                 <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border">
                     <canvas id="financeChart"></canvas>
                     
-                    <!-- Diagram Level Kategori -->
                     <div class="mt-8 pt-6 border-t border-gray-200 dark:border-[#333]">
                         <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Level Kategori</h4>
                         <div id="categoryStats" class="space-y-4"></div>
@@ -157,12 +175,11 @@
             </div>
 
             <!-- Kanan: Daftar Transaksi & Filter -->
-            <div class="lg:col-span-2 animate-fade-in" style="animation-delay: 0.4s;">
+            <div class="lg:col-span-2">
                 <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border h-full">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                         <h3 class="text-2xl font-bold tracking-tight">Riwayat Transaksi</h3>
                         
-                        <!-- Filter Waktu & Tipe -->
                         <div class="flex gap-2 w-full md:w-auto">
                             <select id="filterTime" class="flex-1 md:w-auto px-4 py-2.5 rounded-xl bg-white/60 dark:bg-[#111]/80 border border-gray-200 dark:border-[#333] text-sm font-bold outline-none shadow-sm appearance-none backdrop-blur-md cursor-pointer hover:bg-white dark:hover:bg-[#222] transition-colors">
                                 <option value="all">Semua Waktu</option>
@@ -172,8 +189,8 @@
                             </select>
                             <select id="filterType" class="flex-1 md:w-auto px-4 py-2.5 rounded-xl bg-white/60 dark:bg-[#111]/80 border border-gray-200 dark:border-[#333] text-sm font-bold outline-none shadow-sm appearance-none backdrop-blur-md cursor-pointer hover:bg-white dark:hover:bg-[#222] transition-colors">
                                 <option value="all">Semua Tipe</option>
-                                <option value="income">Pemasukan Saja</option>
-                                <option value="expense">Pengeluaran Saja</option>
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
                             </select>
                         </div>
                     </div>
@@ -222,6 +239,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=3000"></script>
+    <script src="app.js?v=4000"></script>
 </body>
 </html>
