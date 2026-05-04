@@ -56,7 +56,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         btn.innerHTML = "Masuk <svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1'></path></svg>";
         btn.disabled = false;
     } else {
-        // Form direset kalau sukses
         document.getElementById('loginForm').reset();
         btn.innerHTML = "Masuk...";
         btn.disabled = false;
@@ -74,7 +73,6 @@ window.handleLogout = async () => {
     });
     if(result.isConfirmed) {
         await db.auth.signOut();
-        // Bersihkan memori data biar aman
         transactions = []; wallets = []; categories = [];
     }
 };
@@ -128,7 +126,7 @@ async function fetchWalletsAndCategories() {
 
 window.updateCategoryDropdown = () => {
     const typeInputs = document.querySelector('input[name="type"]:checked');
-    if(!typeInputs) return; // Mencegah error kalau belum ter-render
+    if(!typeInputs) return;
     const selectedType = typeInputs.value;
     const catSelect = document.getElementById('category');
     const filteredCats = categories.filter(c => c.type === selectedType);
@@ -268,6 +266,9 @@ function updateChart(income, expense) {
 }
 
 function setupEventListeners() {
+    // INI DIA KABEL YANG SEMPET PUTUS KEMARIN!
+    document.getElementById('transactionForm').addEventListener('submit', addTransaction);
+    
     document.getElementById('filterType').addEventListener('change', renderApp);
     document.getElementById('filterTime').addEventListener('change', renderApp);
     const darkModeBtn = document.getElementById('darkModeToggle'); const htmlTag = document.documentElement;
