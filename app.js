@@ -173,11 +173,26 @@ function renderApp() {
         listContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-12 opacity-50"><svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg><p class="text-center font-bold text-lg">Belum Ada Catatan</p><p class="text-center text-sm font-medium">Keuanganmu belum tercatat di periode ini.</p></div>`;
     }
 
+    // VARIABEL TRACER UNTUK PENGELOMPOKAN PER HARI
+    let lastDateGroup = '';
+
     filteredTransactions.forEach((t, index) => {
         const isIncome = t.type === 'income'; const amountColor = isIncome ? 'text-[#34C759]' : 'text-[#FF3B30]';
         const sign = isIncome ? '+' : '-'; const catName = t.categories ? t.categories.name : 'Unknown'; const walletName = t.wallets ? t.wallets.name : 'Unknown';
         const iconSrc = isIncome ? `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>` : `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>`;
         
+        // LOGIKA PENYUSUNAN HEADER TANGGAL DAILY
+        const currentDateGroup = formatDate(t.date);
+        if (currentDateGroup !== lastDateGroup) {
+            lastDateGroup = currentDateGroup;
+            const dateHeader = document.createElement('div');
+            // Menggunakan styling inter/gray bold uppercase tracking ala premium widget iOS/Nothing OS
+            dateHeader.className = `text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] pt-5 pb-2 pl-1 animate-fade-in`;
+            dateHeader.style.animationDelay = `${index * 0.03}s`;
+            dateHeader.innerText = currentDateGroup;
+            listContainer.appendChild(dateHeader);
+        }
+
         const item = document.createElement('div');
         item.className = `transaction-item p-4 rounded-[1.5rem] bg-white/60 dark:bg-[#111]/80 backdrop-blur-md border border-gray-100 dark:border-[#222] flex justify-between items-center animate-fade-in shadow-sm`;
         item.style.animationDelay = `${index * 0.04}s`; 
@@ -185,7 +200,7 @@ function renderApp() {
         item.innerHTML = `
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center ${isIncome ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'} shrink-0">${iconSrc}</div>
-                <div><h4 class="font-bold text-lg tracking-tight leading-tight">${catName}</h4><p class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-0.5">${formatDate(t.date)} • ${walletName}</p>${t.notes ? `<p class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-1 line-clamp-1">${t.notes}</p>` : ''}</div>
+                <div><h4 class="font-bold text-lg tracking-tight leading-tight">${catName}</h4><p class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-0.5">${walletName}</p>${t.notes ? `<p class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-1 line-clamp-1">${t.notes}</p>` : ''}</div>
             </div>
             <div class="flex items-center gap-2">
                 <p class="font-bold ${amountColor} text-lg mr-2 hidden sm:block tracking-tight">${sign} ${formatRupiah(t.amount)}</p>
