@@ -87,17 +87,17 @@
             </div>
         </header>
 
-        <!-- Dashboard Cards -->
-        <div class="grid grid-cols-2 gap-6 mb-12">
-            <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border hover-scale transition-all group overflow-hidden relative">
-                <div class="absolute inset-0 bg-gradient-to-br from-green-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2">Total Pemasukan</p>
-                <h2 id="totalIncome" class="text-3xl md:text-5xl font-bold tracking-tight text-[#34C759]">Rp 0</h2>
-            </div>
-            <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border hover-scale transition-all group overflow-hidden relative">
-                <div class="absolute inset-0 bg-gradient-to-br from-red-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2">Total Pengeluaran</p>
-                <h2 id="totalExpense" class="text-3xl md:text-5xl font-bold tracking-tight text-[#FF3B30]">Rp 0</h2>
+        <!-- Dashboard Card: Highlight Total Pengeluaran -->
+        <div class="mb-12">
+            <div class="p-8 md:p-10 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border hover-scale transition-all group overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/5 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">Total Pengeluaran</p>
+                        <span id="periodBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-[#FF3B30]">Bulan Ini</span>
+                    </div>
+                    <h2 id="totalExpense" class="text-4xl md:text-6xl font-extrabold tracking-tight text-[#FF3B30]">Rp 0</h2>
+                </div>
             </div>
         </div>
 
@@ -107,65 +107,93 @@
                 
                 <!-- Form Tambah Transaksi -->
                 <div id="formSection" class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border scroll-mt-10 transition-all duration-300">
-                    <h3 id="formTitle" class="text-2xl font-bold tracking-tight mb-6">Record Baru</h3>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 id="formTitle" class="text-2xl font-bold tracking-tight">Catat Pengeluaran</h3>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-[#FF3B30] uppercase tracking-wider">Pengeluaran</span>
+                    </div>
+
                     <form id="transactionForm" class="space-y-5">
-                        <div class="bg-gray-200/50 dark:bg-black/50 p-1.5 rounded-[1.25rem] flex backdrop-blur-md">
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" name="type" value="expense" checked class="peer hidden" onchange="updateCategoryDropdown()">
-                                <div class="text-center py-2.5 rounded-xl text-sm font-bold peer-checked:bg-white dark:peer-checked:bg-[#222] peer-checked:shadow-sm text-gray-500 peer-checked:text-black dark:peer-checked:text-white transition-all duration-300">Pengeluaran</div>
-                            </label>
-                            <label class="flex-1 cursor-pointer">
-                                <input type="radio" name="type" value="income" class="peer hidden" onchange="updateCategoryDropdown()">
-                                <div class="text-center py-2.5 rounded-xl text-sm font-bold peer-checked:bg-white dark:peer-checked:bg-[#222] peer-checked:shadow-sm text-gray-500 peer-checked:text-black dark:peer-checked:text-white transition-all duration-300">Pemasukan</div>
-                            </label>
+                        <input type="hidden" name="type" id="txType" value="expense">
+
+                        <!-- Input Total Jumlah -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Total Pengeluaran</label>
+                            <div class="relative">
+                                <span class="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-lg text-gray-400">Rp</span>
+                                <input type="number" id="amount" required placeholder="0" onwheel="this.blur()" class="w-full pl-14 pr-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#FF3B30] outline-none transition-all text-xl font-bold placeholder:font-normal backdrop-blur-sm">
+                            </div>
                         </div>
 
-                        <div>
-                            <input type="number" id="amount" required placeholder="Jumlah (Rp)" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-all text-lg font-bold placeholder:font-normal backdrop-blur-sm">
+                        <!-- Rincian Nota / Sub-Pengeluaran Section -->
+                        <div class="p-4 rounded-2xl bg-gray-50/70 dark:bg-[#111]/70 border border-dashed border-gray-200 dark:border-[#333] space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">🧾</span>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200">Rincian Nota (Sub-Item)</span>
+                                </div>
+                                <button type="button" onclick="addSubItem()" class="text-xs font-bold text-[#007AFF] hover:underline flex items-center gap-1 active-click">
+                                    <span>+ Tambah Item</span>
+                                </button>
+                            </div>
+
+                            <!-- List Sub-Items Container (Atas-Bawah Layout) -->
+                            <div id="subItemsList" class="space-y-2.5">
+                                <!-- Dynamic Sub-Item Cards -->
+                            </div>
+
+                            <p id="subItemsHelper" class="text-[11px] text-gray-400 dark:text-gray-500 italic">
+                                Masukkan rincian item, Total akan otomatis dihitung.
+                            </p>
                         </div>
                         
+                        <!-- Kategori & Dompet -->
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <div class="flex justify-between items-center mb-1 px-1">
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Kategori</label>
                                     <button type="button" onclick="openModal('categoryModal')" class="text-xs text-[#007AFF] hover:opacity-70 transition-opacity font-bold">Edit ⚙️</button>
                                 </div>
-                                <select id="category" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium appearance-none backdrop-blur-sm"></select>
+                                <select id="category" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium appearance-none backdrop-blur-sm cursor-pointer"></select>
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-1 px-1">
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Dompet</label>
                                     <button type="button" onclick="openModal('walletModal')" class="text-xs text-[#007AFF] hover:opacity-70 transition-opacity font-bold">Edit ⚙️</button>
                                 </div>
-                                <select id="wallet" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium appearance-none backdrop-blur-sm"></select>
+                                <select id="wallet" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium appearance-none backdrop-blur-sm cursor-pointer"></select>
                             </div>
                         </div>
 
+                        <!-- Tanggal -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Tanggal</label>
-                            <input type="date" id="date" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium backdrop-blur-sm">
+                            <input type="date" id="date" required class="w-full px-4 py-3 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border outline-none font-medium backdrop-blur-sm cursor-pointer">
                         </div>
                         
-                        <!-- TEXTAREA EXPANDING -->
+                        <!-- Catatan (Expanding Textarea) -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Catatan</label>
-                            <textarea id="notes" placeholder="Tulis catatan" rows="1" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#007AFF] outline-none transition-shadow text-base font-medium resize-none overflow-hidden backdrop-blur-sm" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                            <textarea id="notes" placeholder="Tulis catatan..." rows="1" class="w-full px-5 py-4 rounded-2xl bg-white/60 dark:bg-black/60 border border-gray-200 dark:border-nothing-border focus:ring-2 focus:ring-[#FF3B30] outline-none transition-shadow text-base font-medium resize-none overflow-hidden backdrop-blur-sm" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
                         </div>
                         
+                        <!-- Tombol Submit & Cancel -->
                         <div class="flex gap-3 pt-2">
                             <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden w-1/3 py-4 rounded-2xl bg-gray-200 dark:bg-[#222] text-black dark:text-white font-bold hover:opacity-80 active-click transition-all">
                                 Batal
                             </button>
-                            <button type="submit" id="submitBtn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white font-bold text-lg hover:shadow-lg hover:shadow-blue-500/30 active-click transition-all flex justify-center items-center gap-2">
+                            <button type="submit" id="submitBtn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FF3B30] to-[#FF9500] text-white font-bold text-lg hover:shadow-lg hover:shadow-red-500/30 active-click transition-all flex justify-center items-center gap-2">
                                 Simpan <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             </button>
                         </div>
                     </form>
                 </div>
 
-                <!-- Grafik Chart & Level Diagram -->
+                <!-- Grafik Chart & Level Diagram Kategori -->
                 <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border">
-                    <canvas id="financeChart"></canvas>
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Porsi Pengeluaran</h4>
+                    <div class="relative flex justify-center items-center min-h-[220px]">
+                        <canvas id="financeChart"></canvas>
+                    </div>
                     
                     <div class="mt-8 pt-6 border-t border-gray-200 dark:border-[#333]">
                         <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Level Kategori</h4>
@@ -177,22 +205,32 @@
             <!-- Kanan: Daftar Transaksi & Filter -->
             <div class="lg:col-span-2">
                 <div class="p-8 rounded-[2.5rem] bg-apple-card dark:bg-nothing-card backdrop-blur-2xl shadow-apple border border-apple-border dark:border-nothing-border h-full">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                        <h3 class="text-2xl font-bold tracking-tight">Riwayat Transaksi</h3>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h3 class="text-2xl font-bold tracking-tight">Riwayat Pengeluaran</h3>
+                            <p class="text-xs text-gray-400 font-medium mt-0.5">Daftar transaksi pengeluaran beserta rincian nota</p>
+                        </div>
                         
-                        <div class="flex gap-2 w-full md:w-auto">
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <!-- Filter Waktu -->
                             <select id="filterTime" class="flex-1 md:w-auto px-4 py-2.5 rounded-xl bg-white/60 dark:bg-[#111]/80 border border-gray-200 dark:border-[#333] text-sm font-bold outline-none shadow-sm appearance-none backdrop-blur-md cursor-pointer hover:bg-white dark:hover:bg-[#222] transition-colors">
-                                <option value="all">Semua Waktu</option>
+                                <option value="month" selected>Bulan Ini</option>
                                 <option value="today">Hari Ini</option>
                                 <option value="week">7 Hari Terakhir</option>
-                                <option value="month" selected>Bulan Ini</option>
+                                <option value="all">Semua Waktu</option>
                             </select>
-                            <select id="filterType" class="flex-1 md:w-auto px-4 py-2.5 rounded-xl bg-white/60 dark:bg-[#111]/80 border border-gray-200 dark:border-[#333] text-sm font-bold outline-none shadow-sm appearance-none backdrop-blur-md cursor-pointer hover:bg-white dark:hover:bg-[#222] transition-colors">
-                                <option value="all">Semua Tipe</option>
-                                <option value="income">Pemasukan</option>
-                                <option value="expense">Pengeluaran</option>
+
+                            <!-- Filter Dompet -->
+                            <select id="filterWallet" class="flex-1 md:w-auto px-4 py-2.5 rounded-xl bg-white/60 dark:bg-[#111]/80 border border-gray-200 dark:border-[#333] text-sm font-bold outline-none shadow-sm appearance-none backdrop-blur-md cursor-pointer hover:bg-white dark:hover:bg-[#222] transition-colors">
+                                <option value="all">Semua Dompet</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Search Box -->
+                    <div class="mb-6 relative">
+                        <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="searchFilter" placeholder="Cari catatan, kategori, atau sub-item nota..." class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/50 dark:bg-black/40 border border-gray-200 dark:border-[#222] text-sm font-medium outline-none focus:ring-2 focus:ring-[#FF3B30] transition-all backdrop-blur-sm">
                     </div>
 
                     <div id="transactionList" class="space-y-3">
@@ -225,20 +263,14 @@
                 <h2 class="text-2xl font-bold tracking-tight">Kelola Kategori</h2>
                 <button onclick="closeModal('categoryModal')" class="text-gray-400 hover:text-black dark:hover:text-white text-3xl transition-colors">&times;</button>
             </div>
-            <div class="flex flex-col gap-3 mb-6">
-                <input type="text" id="newCategoryName" placeholder="Nama kategori..." class="w-full px-5 py-4 rounded-2xl bg-gray-100/50 dark:bg-black border border-gray-200 dark:border-[#333] outline-none focus:ring-2 focus:ring-[#007AFF] font-medium">
-                <div class="flex gap-2">
-                    <select id="newCategoryType" class="flex-1 px-5 py-4 rounded-2xl bg-gray-100/50 dark:bg-black border border-gray-200 dark:border-[#333] outline-none font-medium appearance-none">
-                        <option value="expense">Pengeluaran</option>
-                        <option value="income">Pemasukan</option>
-                    </select>
-                    <button onclick="addCategory()" class="px-6 py-4 bg-[#007AFF] text-white font-bold rounded-2xl hover:opacity-80 transition-all shadow-md shadow-blue-500/20">+</button>
-                </div>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="newCategoryName" placeholder="Nama kategori baru..." class="flex-1 px-5 py-4 rounded-2xl bg-gray-100/50 dark:bg-black border border-gray-200 dark:border-[#333] outline-none focus:ring-2 focus:ring-[#FF3B30] font-medium">
+                <button onclick="addCategory()" class="px-6 py-4 bg-[#FF3B30] text-white font-bold rounded-2xl hover:opacity-80 transition-all shadow-md shadow-red-500/20">+</button>
             </div>
             <div id="modalCategoryList" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scroll"></div>
         </div>
     </div>
 
-    <script src="app.js?v=4000"></script>
+    <script src="app.js?v=4001"></script>
 </body>
 </html>
