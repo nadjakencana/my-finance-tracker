@@ -97,7 +97,26 @@ const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', {
     maximumFractionDigits: 0 
 }).format(Number(angka) || 0);
 
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { 
+const parseLocalDate = (dateString) => {
+    if (!dateString) return new Date();
+    if (typeof dateString === 'string') {
+        const cleanDate = dateString.split('T')[0];
+        const parts = cleanDate.split('-');
+        if (parts.length === 3) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                return new Date(year, month, day);
+            }
+        }
+    }
+    const d = new Date(dateString);
+    d.setHours(0, 0, 0, 0);
+    return d;
+};
+
+const formatDate = (dateString) => parseLocalDate(dateString).toLocaleDateString('id-ID', { 
     day: 'numeric', 
     month: 'short', 
     year: 'numeric' 
@@ -344,16 +363,16 @@ function renderApp() {
     
     const periodBadge = document.getElementById('periodBadge');
     if (filterTime === 'today') {
-        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= today);
+        filteredTransactions = filteredTransactions.filter(t => parseLocalDate(t.date) >= today);
         if (periodBadge) periodBadge.innerText = 'Hari Ini';
     } else if (filterTime === 'week') {
         const last7Days = new Date(today); 
         last7Days.setDate(last7Days.getDate() - 7); 
-        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= last7Days);
+        filteredTransactions = filteredTransactions.filter(t => parseLocalDate(t.date) >= last7Days);
         if (periodBadge) periodBadge.innerText = '7 Hari Terakhir';
     } else if (filterTime === 'month') {
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1); 
-        filteredTransactions = filteredTransactions.filter(t => new Date(t.date) >= startOfMonth);
+        filteredTransactions = filteredTransactions.filter(t => parseLocalDate(t.date) >= startOfMonth);
         if (periodBadge) periodBadge.innerText = 'Bulan Ini';
     } else {
         if (periodBadge) periodBadge.innerText = 'Semua Waktu';
@@ -375,9 +394,18 @@ function renderApp() {
         });
     }
 
-    // Hitung Total Pengeluaran
+    // Pastikan terurut berdasarkan tanggal terbaru
+    filteredTransactions.sort((a, b) => {
+        if (b.date !== a.date) {
+            return (b.date || '').localeCompare(a.date || '');
+        }
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+
+    // Hitung Total Pengeluaran & Total per Hari
     let totalExpense = 0;
     const categoryTotals = {};
+    const dailyTotals = {};
 
     filteredTransactions.forEach(t => {
         const amount = Number(t.amount) || 0;
@@ -387,6 +415,9 @@ function renderApp() {
             categoryTotals[catName] = 0;
         }
         categoryTotals[catName] += amount;
+
+        const dateGroup = formatDate(t.date);
+        dailyTotals[dateGroup] = (dailyTotals[dateGroup] || 0) + amount;
     });
 
     const txCount = filteredTransactions.length;
@@ -420,14 +451,18 @@ function renderApp() {
         const hasSubItems = Array.isArray(t.items) && t.items.length > 0;
         const isExpanded = expandedReceipts.has(t.id);
 
-        // Header Pengelompokan Tanggal
+        // Header Pengelompokan Tanggal & Total per Hari
         const currentDateGroup = formatDate(t.date);
         if (currentDateGroup !== lastDateGroup) {
             lastDateGroup = currentDateGroup;
+            const dayTotal = dailyTotals[currentDateGroup] || 0;
             const dateHeader = document.createElement('div');
-            dateHeader.className = `text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] pt-5 pb-2 pl-1 animate-fade-in flex items-center justify-between`;
+            dateHeader.className = `text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] pt-5 pb-2 px-1 animate-fade-in flex items-center justify-between`;
             dateHeader.style.animationDelay = `${index * 0.02}s`;
-            dateHeader.innerHTML = `<span>${currentDateGroup}</span>`;
+            dateHeader.innerHTML = `
+                <span>${currentDateGroup}</span>
+                <span class="normal-case tracking-normal font-semibold text-gray-500 dark:text-gray-400">Total: <span class="font-bold text-gray-700 dark:text-gray-200">${formatRupiah(dayTotal)}</span></span>
+            `;
             listContainer.appendChild(dateHeader);
         }
 
